@@ -1,41 +1,41 @@
 {
-    "WST": {
-        "name": "Samoan Tālā",
-        "iso": {
-            "code": "WST",
-            "number": "882"
-        },
-        "units": {
-            "major": {
-                "name": "tālā",
-                "symbol": "$"
-            },
-            "minor": {
-                "name": "sene",
-                "symbol": "",
-                "majorValue": 0.01
-            }
-        },
-        "banknotes": {
-            "frequent": [
-                "$2",
-                "$5",
-                "$10",
-                "$20",
-                "$50",
-                "$100"
-            ],
-            "rare": []
-        },
-        "coins": {
-            "frequent": [
-                "10",
-                "20",
-                "50",
-                "$1",
-                "$2"
-            ],
-            "rare": []
-        }
-    }
+	"WST": {
+		"name": "Samoan Tālā",
+		"iso": {
+			"code": "WST",
+			"number": "882"
+		},
+		"units": {
+			"major": {
+				"name": "tālā",
+				"symbol": "$"
+			},
+			"minor": {
+				"name": "sene",
+				"symbol": "",
+				"majorValue": 0.01
+			}
+		},
+		"banknotes": {
+			"frequent": [
+				"$2",
+				"$5",
+				"$10",
+				"$20",
+				"$50",
+				"$100"
+			],
+			"rare": []
+		},
+		"coins": {
+			"frequent": [
+				"10",
+				"20",
+				"50",
+				"$1",
+				"$2"
+			],
+			"rare": []
+		}
+	}
 }
