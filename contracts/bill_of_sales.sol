@@ -1,4 +1,5 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.12;
+
 
 /// @title Bill of sale document.
 contract BillOfSale {
@@ -6,6 +7,7 @@ contract BillOfSale {
 	uint public value;
 	address public seller;
 	address public buyer;
+
 
 	enum State { Created, Locked, Inactive }
 

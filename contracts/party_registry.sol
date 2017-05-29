@@ -1,6 +1,18 @@
 pragma solidity ^0.4.12;
 
+
+library Registry {
+	/// @dev Party contract composed of the hash of contract bytecode.
+	struct PartyContract {
+		bytes32 hash;						// Hash of contract bytecode
+		address party;						// Account party that submitted the address
+		State state;						// State of the contract
+	}
+}
+
+
 /// @title Registry of contractual parties in the system. The registry allow for the validation of parties.
+/// @author jeanturgeon
 contract PartyRegistry {
 
 	address private owner;					// Registry owner
@@ -14,13 +26,6 @@ contract PartyRegistry {
 		LOCKED								// Locked state of a PartyContract.
 	}
 
-	/// @dev Party contract composed of the hash of contract bytecode.
-	struct PartyContract {
-		bytes32 hash;						// Hash of contract bytecode
-		address party;						// Account party that submitted the address
-		State state;						// State of the contract
-	}
-
 
 	/// @dev General Constructor.
 	function PartyRegistry() {
@@ -28,12 +33,14 @@ contract PartyRegistry {
 	}
 
 
-	/// @dev Mapping for contract registry.
-	mapping(bytes32 => PartyContract) public partycontracts;
+	/// @dev Dictionary that map hash to contract, i.e. registry.
+	using Registry for Registry.PartyContract;
+	mapping(bytes32 => Registry.PartyContract) public partycontracts;
+
 
 
 	/**
-	 * Check Identity is valid using modifier.
+	 * @dev Check Identity is valid using modifier.
 	 *
 	 * This will also serve as protection against forks, because at the time the chain forks,
 	 * we can kill the registry, which will then 'invalidate' the identities that are stored
@@ -74,21 +81,36 @@ contract PartyRegistry {
 		_;
 	}
 
+	/**
+	 *
+	 */
+	modifier notNull(bytes32 hash) {
+		if (bytes(hash).length == 0) {
+			throw;
+			_;
+		}
+	}
+
 
 	/**
-	 * Only the registry owner can approve a party contract.
+	 * @dev Only the registry owner can approve a party contract.
 	 *
 	 * @param contract Hash of the contract
 	 * @param owner Registry owner's address
 	 * @return bool True if successful, false otherwise
 	 */
 	function approve(bytes32 contract) onlyOwner(owner) returns(bool) {
-		var partycontract = partycontracts[contract];
-		if (partycontract != null) {
-			partycontract.state = State.ACTIVE;
-			return true;
+		if (partycontracts[contract].hash) {
+			var partycontract = partycontracts[contract];
+			if (partycontract.hash != 0) {
+				partycontract.state = State.ACTIVE;
+				return true;
+			}
+			return false;
 		}
-		return false;
+		else {
+			 throw; // non existant key
+		}
 	}
 
 
@@ -100,15 +122,20 @@ contract PartyRegistry {
 	 * @return bool True if successful, false otherwise
 	 */
 	function delete(bytes32 contract) returns(bool) {
-		var partycontract = partycontracts[contract];
-		if (partycontract.state != State.REJECTED
-				&& partycontract.submitter == msg.sender
-				&& msg.sender == owner) {
-			delete partycontracts[contract];
-			return true;
+		if (partycontracts[contract].hash) {
+			var partycontract = partycontracts[contract];
+			if (partycontract.state != State.REJECTED
+					&& partycontract.submitter == msg.sender
+					&& msg.sender == owner) {
+				delete partycontracts[contract];
+				return true;
+			}
+			else {
+				throw; // cannot reject contract
+			}
 		}
 		else {
-			throw;
+			 throw; // non existant key
 		}
 	}
 
@@ -127,14 +154,19 @@ contract PartyRegistry {
 	 * @return bool True if successful, false otherwise
 	*/
 	function isValid(bytes32 contract) returns(bool) {
-		if (partycontracts[contract].state == State.ACTIVE) {
-			return true;
-		}
-		else if (partycontracts[contract].state == State.REJECTED) {
-			throw;
+		if (partycontracts[contract].hash) {
+			if (partycontracts[contract].state == State.ACTIVE) {
+				return true;
+			}
+			else if (partycontracts[contract].state == State.REJECTED) {
+				throw; // contract is rejected
+			}
+			else {
+				return false;
+			}
 		}
 		else {
-			return false;
+			 throw; // non existant key
 		}
 	}
 
@@ -148,12 +180,17 @@ contract PartyRegistry {
 
 
 	/**
-	* Only the registry owner (ideally multi-sig) can reject a contract.
-	*/
+	 * Only the registry owner can reject a contract.
+	 */
 	function reject(bytes32 contract) onlyOwner(owner) returns(bool) {
-		var partycontract = partycontracts[contract];
-		partycontract.state = State.REJECTED;
-		return true;
+		if (partycontracts[contract].hash) {
+			var partycontract = partycontracts[contract];
+			partycontract.state = State.REJECTED;
+			return true;
+		}
+		else {
+			 throw; // non existant key
+		}
 	}
 
 
@@ -164,10 +201,16 @@ contract PartyRegistry {
 	 * @return bool True if successful, false otherwise
 	 */
 	function submit(bytes32 contract) returns(bool) {
-		var partycontract = partycontracts[contract];
-		partycontract.hash = contract;
-		partycontract.party = msg.sender;
-		partycontract.state = State.PENDING;
-		return true;
+		if (partycontracts[contract].hash) {
+			 throw; // duplicate key
+		}
+		else {
+			// Add new to registry as pending.
+			var partycontract = partycontracts[contract];
+			partycontract.hash = contract;
+			partycontract.party = msg.sender;
+			partycontract.state = State.PENDING;
+			return true;
+		}
 	}
 }
