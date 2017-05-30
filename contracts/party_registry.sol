@@ -6,6 +6,7 @@ library Registry {
 	struct PartyContract {
 		bytes32 hash;						// Hash of contract bytecode
 		address party;						// Account party that submitted the address
+		uint timestamp;						// Timestamp at time of creation of this contract (in seconds)
 		State state;						// State of the contract
 	}
 }
@@ -26,6 +27,10 @@ contract PartyRegistry {
 		LOCKED								// Locked state of a PartyContract.
 	}
 
+	/// @dev Dictionary that map hash to contract, i.e. registry.
+	using Registry for Registry.PartyContract;
+	mapping(bytes32 => Registry.PartyContract) public partycontracts;
+
 
 	/// @dev General Constructor.
 	function PartyRegistry() {
@@ -33,23 +38,10 @@ contract PartyRegistry {
 	}
 
 
-	/// @dev Dictionary that map hash to contract, i.e. registry.
-	using Registry for Registry.PartyContract;
-	mapping(bytes32 => Registry.PartyContract) public partycontracts;
-
-
-
-	/**
-	 * @dev Check Identity is valid using modifier.
-	 *
-	 * This will also serve as protection against forks, because at the time the chain forks,
-	 * we can kill the registry, which will then 'invalidate' the identities that are stored
-	 * on the old chain.
-	 *
-	 * @param identity Registry owner's address
-	 * @param registry Registry owner's address
-	 * @return bool True if successful, false otherwise
-	 */
+	/// @dev Check Identity is valid using modifier.
+	/// @param identity Identity address to validate.
+	/// @param registry Registry owner's address
+	/// @return bool True if identity validate, false otherwise
 	modifier checkIdentity(address identity, address registry) return (bool) {
 		if (registry.isValid(identity) != 1) {
 			throw;
@@ -62,11 +54,11 @@ contract PartyRegistry {
 	 * Contract owner can interact as an anonymous third party by simply using
 	 * another public key address.
 	 *
-	 * @param _account Registry owner's address
-	 * @return _account Registry owner's address
+	 * @param account Registry owner's address
+	 * @return account Registry owner's address
 	 */
-	modifier onlyOwner(address _account) {
-		if (msg.sender != _account) {
+	modifier onlyOwner(address account) {
+		if (msg.sender != account) {
 			throw;
 			_;
 		}
@@ -209,6 +201,7 @@ contract PartyRegistry {
 			var partycontract = partycontracts[contract];
 			partycontract.hash = contract;
 			partycontract.party = msg.sender;
+			partycontract.timestamp = block.timestamp;
 			partycontract.state = State.PENDING;
 			return true;
 		}
